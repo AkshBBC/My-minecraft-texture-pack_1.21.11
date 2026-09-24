@@ -13,6 +13,13 @@ The pack now has a complete visual overhaul pipeline:
 - **Environment:** 1.21.11 celestial sun/moon assets, clouds, rain, snow and End backdrop
 - **Performance:** 16× textures, deterministic generation, no shaders or gameplay changes
 
+### 📥 Download
+
+**Latest GitHub Actions build:** [Download OBSIDIAN // Performance 16x v0.6](https://github.com/AkshBBC/My-minecraft-texture-pack_1.21.11/actions/runs/36069226540)  
+*Open the workflow run and download the `obsidian-v0.6-particles-environment` artifact.*
+
+**Stable release:** The v1.0.0 release will be the permanent download once published.
+
 ### Build
 
 GitHub Actions automatically generates the final ZIP on every push to main.
