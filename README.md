@@ -1,6 +1,6 @@
-# Chat-GPT's Texture Pack
+# Minecraft Texture Pack — OBSIDIAN // Performance 16x
 
-**OBSIDIAN // Performance 16x** — a lightweight Minecraft Java Edition 1.21.11 resource pack made by GPT for Aksh.
+**OBSIDIAN // Performance 16x** — a lightweight Minecraft Java Edition 1.21.11 resource pack with a dark, clean visual style.
 
 ## v0.6 — Final Test Build
 
