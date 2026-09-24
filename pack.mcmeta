@@ -1,14 +1,8 @@
 {
-  "min_format": [
-    75,
-    0
-  ],
-  "max_format": [
-    75,
-    0
-  ],
+  "min_format": [75, 0],
+  "max_format": [75, 0],
   "description": {
-    "text": "OBSIDIAN // Performance 16x",
+    "text": "OBSIDIAN // Performance 16x v0.6 — Final Test Build",
     "color": "a8fff5"
   }
 }
