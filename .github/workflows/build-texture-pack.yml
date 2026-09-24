@@ -1,0 +1,22 @@
+name: Build texture pack
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python tools/generate_block_pack.py
+      - name: Package
+        run: |
+          mkdir -p dist
+          cd build/pack
+          zip -qr ../../dist/Obsidian-Performance-16x-v0.3-Block-Overhaul.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: obsidian-v0.3-block-overhaul
+          path: dist/Obsidian-Performance-16x-v0.3-Block-Overhaul.zip
