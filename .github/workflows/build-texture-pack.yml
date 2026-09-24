@@ -12,12 +12,13 @@ jobs:
           python-version: '3.x'
       - run: python tools/generate_block_pack.py
       - run: python tools/generate_items_gui.py
+      - run: python tools/generate_environment_particles.py
       - name: Package
         run: |
           mkdir -p dist
           cd build/pack
-          zip -qr ../../dist/Obsidian-Performance-16x-v0.5-Items-GUI.zip .
+          zip -qr ../../dist/Obsidian-Performance-16x-v0.6-Particles-Environment.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: obsidian-v0.5-items-gui
-          path: dist/Obsidian-Performance-16x-v0.3-Block-Overhaul.zip
+          name: obsidian-v0.6-particles-environment
+          path: dist/Obsidian-Performance-16x-v0.6-Particles-Environment.zip
