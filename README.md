@@ -11,10 +11,20 @@
 
 ## Download
 
-Get the latest packaged resource pack from:
+**[⬇️ Download OBSIDIAN // Performance 16x](https://raw.githubusercontent.com/AkshBBC/Chat-GPT-s-texture-pack/main/dist/Obsidian-Performance-16x-1.21.11.zip)**
 
-`dist/Obsidian-Performance-16x-1.21.11.zip`
+Or open the packaged ZIP from the `dist/` folder on GitHub.
 
-Extract/use that ZIP as your resource pack in Minecraft Java 1.21.11.
+## Source files
+
+The actual resource-pack files are included in this repository, so you can inspect and edit the textures directly:
+
+```
+assets/minecraft/textures/
+├── block/
+└── item/
+```
+
+The pack uses **Minecraft Java Edition 1.21.11** resource-pack format.
 
 > This is the first prototype. More blocks, items, GUI, mobs, particles and environment textures can be added later.
