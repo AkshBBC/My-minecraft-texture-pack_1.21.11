@@ -2,33 +2,26 @@
 
 **OBSIDIAN // Performance 16x** — a lightweight Minecraft Java Edition 1.21.11 resource pack made by GPT for Aksh.
 
-## v0.4 — Complete Block Overhaul
+## v0.6 — Final Test Build
 
-The build now generates a broad 1.21.11 block-texture set in one automated pass, including:
+The pack now has a complete visual overhaul pipeline:
 
-- stone, deepslate, tuff, sandstone, Nether and End families
-- all major wood families, logs, planks and variants
-- concrete, terracotta, wool, glass and decorative colour families
-- ores with high-visibility accent treatment
-- copper/weathering/waxed families
-- plants, foliage, coral and nature blocks
-- redstone/utility/building blocks
-- common top/side/bottom model variants
+- **Blocks:** broad 1.21.11 coverage with distinct OBSIDIAN material families and high-visibility ores
+- **Items:** redesigned materials, food, utilities, navigation and selected equipment
+- **GUI:** OBSIDIAN dark UI assets and accent treatment
+- **Particles:** fire, soul fire, smoke, lava, sculk, enchantment, weather and ambient effects
+- **Environment:** 1.21.11 celestial sun/moon assets, clouds, rain, snow and End backdrop
+- **Performance:** 16× textures, deterministic generation, no shaders or gameplay changes
 
-Textures are 16×16 and generated deterministically by the repository's Python build script. Missing/unsupported vanilla model details can still fall back to Minecraft's default textures.
+### Build
 
-## Build
+GitHub Actions automatically generates the final ZIP on every push to main.
 
-GitHub Actions automatically builds the ZIP on pushes to main.
+**Target:** Minecraft Java Edition 1.21.11  
+**Resource pack format:** 75.0
 
-The workflow packages the expanded generator output into the build artifact.
+This build is intended for in-game testing. Some Minecraft visuals are renderer/data-driven rather than simple texture overrides, so the test build is the source of truth for what loads in-game.
 
-## Goals
+## Roadmap
 
-- 16× textures for a small resource footprint
-- darker, cleaner OBSIDIAN visual style
-- high-contrast materials and ores
-- consistent pixel-art families
-- no shaders or gameplay changes
-
-Minecraft Java Edition 1.21.11 resource-pack format 75.0 is targeted.
+Blocks → Items + GUI → Particles + Environment → Final testing
