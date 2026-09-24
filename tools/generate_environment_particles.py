@@ -7,6 +7,7 @@ ENV=OUT/"assets/minecraft/textures/environment"
 PART.mkdir(parents=True,exist_ok=True); ENV.mkdir(parents=True,exist_ok=True)
 
 def png(path,w,h,pixel_fn):
+    path.parent.mkdir(parents=True, exist_ok=True)
     px=[]
     for y in range(h):
         row=[]
