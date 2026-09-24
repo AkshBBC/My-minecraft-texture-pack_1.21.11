@@ -71,52 +71,56 @@ for name,base,acc in [
         return f
     png(PART/f"{name}.png",16,16,make())
 
-# OBSIDIAN sky: subtle midnight gradient with cyan horizon and a compact star field.
-def sky(x,y,w,h):
-    t=y/(h-1)
-    top=(12,10,20); bottom=(48,72,92)
-    c=tuple(int(top[i]*(1-t)+bottom[i]*t) for i in range(3))
-    stars={(7,5),(20,9),(34,6),(49,14),(58,8),(12,22),(42,25),(53,29)}
-    if (x,y) in stars: return (175,240,235,235)
-    return (*c,255)
-png(ENV/"overworld_sky.png",64,64,sky)
-
-# Sun: compact cyan-white OBSIDIAN core with a warm rim.
+# 1.21.11 celestial/weather paths.
+# The 1.21.11 client uses the celestials atlas for the sun and eight moon phases.
 def sun(x,y,w,h):
     d=((x-(w-1)/2)**2+(y-(h-1)/2)**2)**0.5
-    if d>24: return (0,0,0,0)
-    if d>20: return (235,185,70,170)
-    t=d/20
+    if d>15.5: return (0,0,0,0)
+    if d>12: return (235,185,70,170)
+    t=d/12
     return (int(225-80*t),int(250-40*t),int(245-20*t),255)
-png(ENV/"sun.png",64,64,sun)
+png(ENV/"celestial/sun.png",32,32,sun)
 
-# Eight moon phases in one 256x32 strip.
-def moon(x,y,w,h):
-    phase=(x//32)%8
-    cx=(phase*32)+15.5; cy=15.5
-    d=((x-cx)**2+(y-cy)**2)**0.5
-    if d>14.5: return (0,0,0,0)
-    # phase shading shifts from left to right across the strip.
-    local=x-phase*32
-    shadow=(phase/7)*30
-    edge=200+int(35*(1-d/14.5))
-    return (175+int(shadow),220+int(shadow/2),225,edge)
-png(ENV/"moon_phases.png",256,32,moon)
+phases=["full_moon","waning_gibbous","third_quarter","waning_crescent",
+        "new_moon","waxing_crescent","first_quarter","waxing_gibbous"]
+for pi,name in enumerate(phases):
+    def moon(x,y,w,h,pi=pi):
+        cx=15.5; cy=15.5
+        d=((x-cx)**2+(y-cy)**2)**0.5
+        if d>14.5: return (0,0,0,0)
+        # Stylized phase mask with cool cyan-white lunar surface.
+        nx=(x-15.5)/14.5
+        shift=[-1.0,-0.55,-0.05,0.45,1.0,0.45,-0.05,-0.55][pi]
+        lit=nx>=shift
+        if pi==0: lit=True
+        if pi==4: lit=False
+        if not lit: return (0,0,0,0)
+        edge=205+int(40*(1-d/14.5))
+        return (185,215,220,edge)
+    png(ENV/f"celestial/moon/{name}.png",32,32,moon)
 
-# Rain/snow overlays use simple high-contrast silhouettes.
-png(ENV/"rain.png",64,64,lambda x,y,w,h: (75,145,205,130) if ((x+y*2)%17 in (0,1)) else (0,0,0,0))
-png(ENV/"snow.png",64,64,lambda x,y,w,h: (220,230,235,170) if ((x*3+y)%19 in (0,1)) else (0,0,0,0))
+# Repeating cloud mask.
+png(ENV/"clouds.png",256,256,lambda x,y,w,h:
+    (205,215,220,115) if ((x//16 + y//12) % 5 in (0,1) and (x*7+y*3)%11<8) else (0,0,0,0))
 
-# End sky: deep obsidian field with cyan/magenta star accents.
+# Vanilla weather sheets are 64x256 in 1.21.x.
+png(ENV/"rain.png",64,256,lambda x,y,w,h:
+    (75,145,205,145) if ((x + (y*3)%64) % 17 in (0,1)) else (0,0,0,0))
+png(ENV/"snow.png",64,256,lambda x,y,w,h:
+    (220,230,235,175) if ((x*3+y) % 23 in (0,1)) else (0,0,0,0))
+
+# Tiled End backdrop.
 def endsky(x,y,w,h):
-    t=(x+y)/(w+h)
-    base=(13,7,25)
     if (x*17+y*31)%127==0: return (110,245,225,230)
     if (x*29+y*13)%173==0: return (210,100,225,210)
-    return (*base,255)
+    return (13,7,25,255)
 png(ENV/"end_sky.png",128,128,endsky)
+
+# End flash used by the celestial/environment rendering.
+png(ENV/"end_flash.png",64,64,lambda x,y,w,h:
+    (220,245,240,210) if ((x-31.5)**2+(y-31.5)**2)<500 else (0,0,0,0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
       "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Particles + Environment","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
-print(f"Generated {len(PARTICLES)+2} particle textures and environment sky/weather assets.")
+print(f"Generated {len(PARTICLES)+2} particle textures and v0.6 celestial/weather assets.")
