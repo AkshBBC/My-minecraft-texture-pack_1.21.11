@@ -65,7 +65,7 @@ ITEMS={
 "leather_horse_armor":("leather","paper"),"wolf_armor":("diamond","leather"),
 "elytra":("obsidian","diamond"),"shield":("wood","iron")
 }
-PAL["sculk"]=(35,105,108); PAL["glass"]=(115,185,200); PAL["brown"]=(125,78,48)
+PAL["sculk"]=(35,105,108); PAL["glass"]=(115,185,200); PAL["brown"]=(125,78,48); PAL["orange"]=(225,110,45)
 
 for i,(name,(a,b)) in enumerate(ITEMS.items()):
     png(ITEM/f"{name}.png",16,16,PAL[a],PAL[b] if b else None,1000+i)
