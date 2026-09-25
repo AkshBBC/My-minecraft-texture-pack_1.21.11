@@ -137,11 +137,20 @@ def png(path, base, accent=None, mode="noise", seed=0):
             px[y][x] = tuple(max(0,min(255,c+q)) for c in base) + (255,)
     if mode == "ore":
         ac = accent or (255,255,255)
-        for _ in range(12):
+        host = tuple(max(0,int(v*0.72)) for v in base)
+        vein = tuple(min(255,int(v*1.18+8)) for v in ac)
+        for y in range(16):
+            for x in range(16):
+                if (x+y+seed)%7 == 0:
+                    px[y][x]=(*host,255)
+        for _ in range(10):
             x,y=r.randrange(1,15),r.randrange(1,15)
-            for dx,dy in ((0,0),(1,0),(0,1)):
+            for dx,dy in ((0,0),(1,0),(0,1),(-1,0),(0,-1)):
                 if 0<=x+dx<16 and 0<=y+dy<16:
-                    px[y+dy][x+dx]=(*ac,255)
+                    px[y+dy][x+dx]=(*vein,255)
+        for _ in range(5):
+            x,y=r.randrange(1,15),r.randrange(1,15)
+            px[y][x]=(*ac,255)
     if mode == "glass":
         for y in range(16):
             for x in range(16):
