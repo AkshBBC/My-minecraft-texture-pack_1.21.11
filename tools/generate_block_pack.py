@@ -618,9 +618,9 @@ def style_for(name):
     if "glass" in name: return "glass"
     if any(k in name for k in ("leaves",)): return "leaf"
     if any(k in name for k in ("sapling","flower","grass","fern","vine","kelp","coral","roots","fungus","mushroom","bush","lily","dripleaf","seagrass","wart","petals","torchflower")): return "plant"
-    if any(k in name for k in ("brick","tile","bookshelf")): return "soft_realistic"
-    if any(k in name for k in ("log","wood","planks","hyphae","stem")): return "soft_realistic"
-    return "soft_realistic"
+    if any(k in name for k in ("brick","tile","bookshelf")): return "brick"
+    if any(k in name for k in ("log","wood","planks","hyphae","stem")): return "wood"
+    return "noise"
 
 # Emit every registry key.
 for i, name in enumerate(sorted(set(BLOCKS))):
