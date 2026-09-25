@@ -159,9 +159,12 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for i in range(16):
             px[i][i]=(*ac,205)
     if mode == "leaf":
+        # Softer layered foliage: preserve cutout silhouette, add leaf clusters.
         for y in range(16):
             for x in range(16):
-                if r.random()<.13: px[y][x]=(0,0,0,0)
+                if r.random()<.10: px[y][x]=(0,0,0,0)
+                elif (x*3+y*5+seed)%11 == 0:
+                    px[y][x]=tuple(min(255,c+18) for c in base)+(255,)
     if mode == "plant":
         for y in range(16):
             for x in range(16):
