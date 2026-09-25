@@ -166,13 +166,17 @@ def png(path, base, accent=None, mode="noise", seed=0):
                 elif (x*3+y*5+seed)%11 == 0:
                     px[y][x]=tuple(min(255,c+18) for c in base)+(255,)
     if mode == "plant":
+        # Crisp Minecraft cutout with softer stems and tiny natural highlights.
         for y in range(16):
             for x in range(16):
-                if not (abs(x-7)<3 or (y>8 and abs(x-8)<5)): px[y][x]=(0,0,0,0)
+                if not (abs(x-7)<3 or (y>8 and abs(x-8)<5)):
+                    px[y][x]=(0,0,0,0)
         ac=accent or base
+        hi=tuple(min(255,c+28) for c in ac)
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
+            if y%4==0 and x+1<16: px[y][x+1]=(*hi,255)
     if mode == "door_realistic":
         # 16x door sprite: strong frame, long panels, hardware and species-specific
         # window/details. Cherry gets a deliberately cute floral heart motif.
