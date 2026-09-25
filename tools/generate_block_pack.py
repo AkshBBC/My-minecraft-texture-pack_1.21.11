@@ -84,6 +84,15 @@ STONE_PALETTES = {
 
 STONE_KEYS = set(STONE_PALETTES)
 
+# Decorative light blocks: sakura/mushroom-inspired pink luminous pixel art.
+# These textures look emissive, while vanilla block-light mechanics remain unchanged.
+PINK_LIGHT_PALETTES = {
+    "glowstone": (72, 18, 57),
+    "redstone_lamp": (58, 15, 43),
+    "shroomlight": (78, 20, 60),
+}
+PINK_LIGHT_KEYS = set(PINK_LIGHT_PALETTES)
+
 def png(path, base, accent=None, mode="noise", seed=0):
     r = random.Random(seed)
     px = [[(*base,255) for _ in range(16)] for _ in range(16)]
@@ -121,6 +130,54 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
+    if mode == "pink_light":
+        # Dark magenta foundation + bright hand-placed motifs creates a strong
+        # pink-glow impression at 16x without smooth gradients or shaders.
+        dark = tuple(max(0, v - 18) for v in base)
+        mid = (214, 62, 151)
+        hot = (255, 103, 190)
+        pale = (255, 191, 224)
+        core = (255, 236, 246)
+        for y in range(16):
+            for x in range(16):
+                d = ((x * 5 + y * 3 + seed) % 13) - 6
+                px[y][x] = tuple(max(0, min(255, v + d)) for v in dark) + (255,)
+
+        def dot(x, y, color):
+            if 0 <= x < 16 and 0 <= y < 16:
+                px[y][x] = (*color, 255)
+
+        def sakura(cx, cy):
+            # Four chunky petals + luminous center; reads clearly at 16x.
+            for dx,dy in ((0,-2),(-2,0),(2,0),(0,2),(-1,-1),(1,-1),(-1,1),(1,1)):
+                dot(cx+dx, cy+dy, hot if abs(dx)+abs(dy)==2 else pale)
+            dot(cx, cy, core)
+            dot(cx-1, cy, pale); dot(cx+1, cy, pale)
+            dot(cx, cy-1, pale); dot(cx, cy+1, pale)
+
+        if path.stem == "glowstone":
+            for cx,cy in ((4,4),(11,5),(7,11),(13,12)):
+                sakura(cx,cy)
+            for x,y in ((1,9),(3,13),(9,1),(14,7),(1,2),(11,14)):
+                dot(x,y,mid)
+        elif path.stem == "redstone_lamp":
+            # Symmetrical sakura lattice for the lamp face.
+            for i in range(2,14):
+                dot(i,i,mid); dot(15-i,i,mid)
+            for cx,cy in ((4,4),(11,4),(4,11),(11,11),(8,8)):
+                sakura(cx,cy)
+            for i in range(16):
+                if i % 3 == 0:
+                    dot(i,0,hot); dot(i,15,hot); dot(0,i,hot); dot(15,i,hot)
+        else:  # shroomlight
+            # Repeating glowing mushroom caps and stems.
+            for cx,cy in ((4,5),(11,5),(7,12)):
+                for dx,dy in ((-2,0),(-1,-1),(0,-1),(1,-1),(2,0),(-1,0),(0,0),(1,0)):
+                    dot(cx+dx,cy+dy, hot if dy==0 else pale)
+                dot(cx,cy,core)
+                dot(cx,cy+1,pale); dot(cx,cy+2,mid)
+            for x,y in ((1,2),(8,2),(14,3),(2,12),(13,13),(10,10)):
+                dot(x,y,hot)
     if mode == "stone_glow":
         # Keep the recognizable Minecraft-like pixel texture, but brighten the
         # material and add restrained luminous flecks/edges instead of a flat wash.
@@ -146,7 +203,7 @@ def png(path, base, accent=None, mode="noise", seed=0):
             if (x + y + seed) % 3:
                 rr,gg,bb,_ = px[y][x]
                 px[y][x] = (min(255,rr+18),min(255,gg+18),min(255,bb+18),255)
-    if accent and mode not in ("ore","glass","plant","stone_glow"):
+    if accent and mode not in ("ore","glass","plant","stone_glow","pink_light"):
         for i in range(3):
             x=r.randrange(16); y=r.randrange(16)
             px[y][x]=(*accent,255)
@@ -159,6 +216,8 @@ def base_for(name):
     n=name
     # Stone-family textures get their own brighter, material-specific palette.
     # This intentionally runs before the generic material matching below.
+    if n in PINK_LIGHT_PALETTES:
+        return PINK_LIGHT_PALETTES[n]
     if n in STONE_PALETTES:
         return STONE_PALETTES[n]
     if any(k in n for k in ("diamond","lapis","blue_ice")): return PALETTE["diamond"]
@@ -196,6 +255,8 @@ def accent_for(name):
     return None
 
 def style_for(name):
+    if name in PINK_LIGHT_KEYS:
+        return "pink_light"
     if name in STONE_KEYS:
         return "stone_glow"
     if any(k in name for k in ("ore","debris")): return "ore"
@@ -233,6 +294,6 @@ for ore, ac in {
             png(BLOCK/f"{host}_{ore}_ore.png", hb, ac, "ore", 9000+len(ore)+(1 if host=="deepslate" else 0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Brighter Stone Family","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Pink Sakura Lights","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(list(BLOCK.glob('*.png')))} block textures.")
