@@ -103,6 +103,10 @@ WOOD_PALETTES = {
 
 WOOD_KEYS = set(WOOD_PALETTES)
 
+# Plank family: the same species colours as the logs, but with long,
+# irregular board strips and naturally wandering grain/seam lines.
+PLANK_KEYS = set(f"{k}_planks" for k in WOOD_PALETTES)
+
 # Decorative light blocks: sakura/mushroom-inspired pink luminous pixel art.
 # These textures look emissive, while vanilla block-light mechanics remain unchanged.
 PINK_LIGHT_PALETTES = {
@@ -149,6 +153,97 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
+    if mode == "planks_realistic":
+        # Long board strips with intentionally imperfect/wandering seams.
+        # The pattern is deterministic per texture but never perfectly straight.
+        family = next((k for k in WOOD_PALETTES if path.stem == f"{k}_planks"), "oak")
+        base2 = tuple(min(255, int(v * 1.10 + 4)) for v in base)
+        dark = tuple(max(0, int(v * 0.58)) for v in base2)
+        seam = tuple(max(0, int(v * 0.72)) for v in base2)
+        mid = tuple(max(0, int(v * 0.92)) for v in base2)
+        light = tuple(min(255, int(v * 1.13 + 4)) for v in base2)
+        highlight = tuple(min(255, int(v * 1.24 + 7)) for v in base2)
+
+        # Base grain: elongated horizontal fibres, never perfectly uniform.
+        for y in range(16):
+            for x in range(16):
+                wave = int(math.sin(x * 0.72 + y * 0.41 + seed * 0.017) * 6)
+                drift = int(math.sin(y * 1.7 + seed * 0.009) * 3)
+                jitter = r.randint(-4, 4)
+                px[y][x] = tuple(
+                    max(0, min(255, q + wave + drift + jitter)) for q in base2
+                ) + (255,)
+
+        def put(x, y, color):
+            if 0 <= x < 16 and 0 <= y < 16:
+                px[y][x] = (*color, 255)
+
+        # Board boundaries: each boundary wanders by 0-2 pixels instead of
+        # forming a ruler-straight line.
+        boundaries = [3, 7, 11]
+        for idx, nominal in enumerate(boundaries):
+            drift = r.choice((-1, 0, 0, 1))
+            for x in range(16):
+                wobble = r.choice((-1, 0, 0, 0, 1))
+                yy = max(0, min(15, nominal + drift + wobble))
+                put(x, yy, seam)
+                if r.random() < 0.70:
+                    put(x, max(0, yy-1), dark if (x+idx)%4 else seam)
+
+        # Long, broken grain streaks. They travel several pixels before
+        # changing height/brightness, giving the wood a hand-cut appearance.
+        for _ in range(18):
+            y = r.randrange(1,15)
+            x = r.randrange(0,5)
+            length = r.randrange(5,15)
+            colour = r.choice((mid, light, light, highlight))
+            slope = r.choice((-1, 0, 0, 0, 1))
+            for step in range(length):
+                xx = x + step
+                yy = y + int(step * slope / 5)
+                if 0 <= xx < 16 and 0 <= yy < 16:
+                    put(xx, yy, colour)
+                    if r.random() < 0.28 and yy+1 < 16:
+                        put(xx, yy+1, mid)
+
+        # Small knots and broken grain prevent the strips from looking like
+        # repeated perfectly straight Minecraft lines.
+        for _ in range(5):
+            cx, cy = r.randrange(1,15), r.randrange(1,15)
+            put(cx, cy, dark)
+            if cx+1 < 16: put(cx+1, cy, light)
+            if cy+1 < 16: put(cx, cy+1, seam)
+            if cx+2 < 16 and r.random() < 0.6: put(cx+2, cy, mid)
+
+        # Species-specific plank character.
+        if family == "birch":
+            for y in (2, 6, 10, 14):
+                for x in range(r.randrange(0,3), 16, r.randrange(4,7)):
+                    put(x, y, dark)
+        elif family == "acacia":
+            for y in (1, 5, 9, 13):
+                for x in range((y+seed)%3, 16, 4):
+                    put(x, y, light)
+        elif family == "cherry":
+            for x,y in ((2,3),(9,5),(5,12),(13,9)):
+                put(x,y,highlight)
+                if x+1 < 16: put(x+1,y,light)
+        elif family == "bamboo":
+            # Bamboo planks keep a subtle segmented/golden character.
+            for y in (4, 9, 14):
+                for x in range(16):
+                    if (x+y)%3:
+                        put(x,y,seam)
+        elif family == "crimson":
+            for x,y in ((2,2),(7,6),(12,11),(4,14)):
+                put(x,y,(190,58,75))
+        elif family == "warped":
+            for x,y in ((2,4),(8,8),(13,12),(5,14)):
+                put(x,y,(75,173,163))
+        elif family == "mangrove":
+            for x,y in ((3,3),(11,6),(6,13),(14,10)):
+                put(x,y,highlight)
+
     if mode == "wood_realistic":
         # Rich, natural 16x bark/stripped-wood rendering. Keep pixel edges crisp
         # and use layered grain rather than the old flat noise treatment.
@@ -400,6 +495,8 @@ def accent_for(name):
     return None
 
 def style_for(name):
+    if name in PLANK_KEYS:
+        return "planks_realistic"
     if name in PINK_LIGHT_KEYS:
         return "pink_light"
     if any(name == k + "_log" or name == k + "_wood" or name == "stripped_" + k + "_log" or name == "stripped_" + k + "_wood" for k in WOOD_KEYS) or name in ("bamboo_block","stripped_bamboo_block","crimson_stem","warped_stem","stripped_crimson_stem","stripped_warped_stem","crimson_hyphae","warped_hyphae","stripped_crimson_hyphae","stripped_warped_hyphae"):
@@ -441,6 +538,6 @@ for ore, ac in {
             png(BLOCK/f"{host}_{ore}_ore.png", hb, ac, "ore", 9000+len(ore)+(1 if host=="deepslate" else 0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Realistic Wood Family","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Realistic Wood + Random Grain Planks","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(list(BLOCK.glob('*.png')))} block textures.")
