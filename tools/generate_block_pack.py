@@ -107,6 +107,9 @@ WOOD_KEYS = set(WOOD_PALETTES)
 # irregular board strips and naturally wandering grain/seam lines.
 PLANK_KEYS = set(f"{k}_planks" for k in WOOD_PALETTES)
 
+# Door family: realistic framed panels and species-specific window/panel details.
+DOOR_KEYS = set(f"{k}_door" for k in WOOD_PALETTES)
+
 # Decorative light blocks: sakura/mushroom-inspired pink luminous pixel art.
 # These textures look emissive, while vanilla block-light mechanics remain unchanged.
 PINK_LIGHT_PALETTES = {
@@ -153,6 +156,107 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
+    if mode == "door_realistic":
+        # 16x door sprite: strong frame, long panels, hardware and species-specific
+        # window/details. Cherry gets a deliberately cute floral heart motif.
+        family = next((k for k in WOOD_PALETTES if path.stem == f"{k}_door"), "oak")
+        base2 = tuple(min(255, int(v * 1.08 + 3)) for v in base)
+        dark = tuple(max(0, int(v * 0.48)) for v in base2)
+        shadow = tuple(max(0, int(v * 0.68)) for v in base2)
+        mid = tuple(max(0, int(v * 0.90)) for v in base2)
+        light = tuple(min(255, int(v * 1.16 + 5)) for v in base2)
+        bright = tuple(min(255, int(v * 1.28 + 8)) for v in base2)
+
+        for y in range(16):
+            for x in range(16):
+                wave = int(math.sin(x * 0.75 + y * 0.19 + seed * 0.013) * 4)
+                px[y][x] = tuple(max(0,min(255,q+wave+r.randint(-3,3))) for q in base2) + (255,)
+
+        def put(x,y,col):
+            if 0 <= x < 16 and 0 <= y < 16:
+                px[y][x]=(*col,255)
+
+        # Outer frame.
+        for x in range(16):
+            put(x,0,dark); put(x,15,dark)
+        for y in range(16):
+            put(0,y,dark); put(15,y,dark)
+            if y not in (0,15):
+                put(1,y,shadow); put(14,y,light)
+
+        # Vertical rails and central stile.
+        for x in (3,12):
+            for y in range(1,15):
+                put(x,y,shadow)
+                if x+1 < 16: put(x+1,y,light)
+        for y in range(1,15):
+            put(7,y,mid); put(8,y,light)
+
+        # Three framed panels with slightly uneven long grain.
+        for top,bottom in ((2,5),(6,9),(10,13)):
+            for x in range(4,12):
+                for y in range(top,bottom+1):
+                    if (x+y+seed)%4==0: put(x,y,mid)
+            put(4,top,dark); put(11,top,dark)
+            put(4,bottom,dark); put(11,bottom,dark)
+
+        # Species-specific details.
+        if family in ("oak","jungle","acacia"):
+            # Small upper window with a warm framed inset.
+            for x in range(5,11):
+                put(x,2,bright); put(x,4,dark)
+            for y in range(2,5):
+                put(5,y,bright); put(10,y,dark)
+            put(7,3,dark); put(8,3,dark)
+        elif family in ("spruce","dark_oak","mangrove"):
+            # Heavier, fortress-like cross braces.
+            for i in range(3,13):
+                put(i,i,dark); put(15-i,i,dark)
+        elif family == "birch":
+            for x,y in ((5,3),(9,3),(6,11),(10,11)):
+                put(x,y,dark)
+        elif family == "cherry":
+            # Cute cherry door: soft pink panels + tiny blossom/heart motif.
+            petal=(255,150,188); pale=(255,205,224); core=(255,235,244)
+            for cx,cy in ((6,3),(9,3)):
+                put(cx,cy,petal); put(cx+1,cy,pale)
+            # tiny heart silhouette in the upper-middle panel
+            for x,y in ((6,6),(9,6),(5,7),(6,7),(9,7),(10,7),(7,8),(8,8)):
+                put(x,y,petal)
+            put(7,7,pale); put(8,7,pale)
+            # little blossom accents
+            for x,y in ((4,12),(11,11),(5,13),(10,13)):
+                put(x,y,pale)
+            # pink inner trim
+            for x in range(4,12):
+                if x%2: put(x,10,petal)
+        elif family == "bamboo":
+            for x in (5,8,11):
+                for y in range(2,14):
+                    put(x,y,dark)
+            for y in (5,10):
+                for x in range(4,12):
+                    put(x,y,bright)
+        elif family == "pale_oak":
+            for i in range(4,12,3):
+                for y in range(2,14):
+                    put(i,y,shadow)
+        elif family == "crimson":
+            for x,y in ((5,3),(10,5),(6,11),(11,12)):
+                put(x,y,(205,56,76))
+        elif family == "warped":
+            for x,y in ((5,4),(10,3),(6,11),(11,9)):
+                put(x,y,(76,173,163))
+
+        # Door handle/hinge accents.
+        metal=(55,55,58)
+        if family == "cherry":
+            metal=(95,60,72)
+        put(12,8,metal); put(13,8,bright)
+        put(2,4,metal); put(2,11,metal)
+        if family == "dark_oak":
+            put(12,8,(190,145,45))
+            put(13,8,(225,185,70))
     if mode == "planks_realistic":
         # Long board strips with intentionally imperfect/wandering seams.
         # The pattern is deterministic per texture but never perfectly straight.
@@ -495,6 +599,8 @@ def accent_for(name):
     return None
 
 def style_for(name):
+    if name in DOOR_KEYS:
+        return "door_realistic"
     if name in PLANK_KEYS:
         return "planks_realistic"
     if name in PINK_LIGHT_KEYS:
@@ -538,6 +644,6 @@ for ore, ac in {
             png(BLOCK/f"{host}_{ore}_ore.png", hb, ac, "ore", 9000+len(ore)+(1 if host=="deepslate" else 0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Realistic Wood + Random Grain Planks","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Realistic Wood Doors","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(list(BLOCK.glob('*.png')))} block textures.")
