@@ -116,6 +116,11 @@ PINK_LIGHT_PALETTES = {
     "glowstone": (72, 18, 57),
     "redstone_lamp": (58, 15, 43),
     "shroomlight": (78, 20, 60),
+    "sea_lantern": (58, 24, 67),
+    "beacon": (72, 20, 60),
+    "ochre_froglight": (88, 26, 64),
+    "pearlescent_froglight": (92, 30, 78),
+    "verdant_froglight": (62, 24, 68),
 }
 PINK_LIGHT_KEYS = set(PINK_LIGHT_PALETTES)
 
@@ -613,9 +618,9 @@ def style_for(name):
     if "glass" in name: return "glass"
     if any(k in name for k in ("leaves",)): return "leaf"
     if any(k in name for k in ("sapling","flower","grass","fern","vine","kelp","coral","roots","fungus","mushroom","bush","lily","dripleaf","seagrass","wart","petals","torchflower")): return "plant"
-    if any(k in name for k in ("brick","tile","bookshelf")): return "brick"
-    if any(k in name for k in ("log","wood","planks","hyphae","stem")): return "wood"
-    return "noise"
+    if any(k in name for k in ("brick","tile","bookshelf")): return "soft_realistic"
+    if any(k in name for k in ("log","wood","planks","hyphae","stem")): return "soft_realistic"
+    return "soft_realistic"
 
 # Emit every registry key.
 for i, name in enumerate(sorted(set(BLOCKS))):
