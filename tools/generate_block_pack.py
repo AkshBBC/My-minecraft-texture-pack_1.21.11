@@ -132,7 +132,9 @@ def png(path, base, accent=None, mode="noise", seed=0):
             q = r.randint(-11,11)
             if mode == "brick":
                 joint = (y % 4 == 0 or (x-(2 if (y//4)%2 else 0)) % 8 == 0)
-                q += -9 if joint else 2\n                if not joint and (x*5+y*3+seed)%19 == 0:\n                    q += 10
+                q += -9 if joint else 2
+                if not joint and (x*5+y*3+seed)%19 == 0:
+                    q += 10
             if mode == "wood":
                 q += int(math.sin(x/2.2 + y/4)*7)
             px[y][x] = tuple(max(0,min(255,c+q)) for c in base) + (255,)
@@ -588,7 +590,9 @@ def png(path, base, accent=None, mode="noise", seed=0):
             px[y][x]=(*accent,255)
     raw=b"".join(b"\0"+bytes(sum((list(v) for v in row),[])) for row in px)
     def chunk(t,d): return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
-    data=b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">IIBBBBB",16,16,8,6,0,0,0))+chunk(b"IDAT",zlib.compress(raw,9))+chunk(b"IEND",b"")
+    data=b"\x89PNG\r
+\x1a
+"+chunk(b"IHDR",struct.pack(">IIBBBBB",16,16,8,6,0,0,0))+chunk(b"IDAT",zlib.compress(raw,9))+chunk(b"IEND",b"")
     path.write_bytes(data)
 
 def base_for(name):
