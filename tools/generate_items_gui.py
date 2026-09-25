@@ -5,6 +5,8 @@ OUT=Path("build/pack")
 ITEM=OUT/"assets/minecraft/textures/item"
 GUI=OUT/"assets/minecraft/textures/gui"
 ITEM.mkdir(parents=True,exist_ok=True); GUI.mkdir(parents=True,exist_ok=True)
+WIDGET=GUI/"sprites"/"widget"
+WIDGET.mkdir(parents=True,exist_ok=True)
 
 PAL={
 "stone":(72,78,86),"metal":(155,164,168),"iron":(170,176,180),"gold":(224,180,55),
@@ -70,12 +72,54 @@ PAL["sculk"]=(35,105,108); PAL["glass"]=(115,185,200); PAL["brown"]=(125,78,48);
 for i,(name,(a,b)) in enumerate(ITEMS.items()):
     png(ITEM/f"{name}.png",16,16,PAL[a],PAL[b] if b else None,1000+i)
 
+# Circular-ended / pill-shaped Minecraft menu buttons.
+# Vanilla buttons are rescaled to arbitrary widths, so a true circle would become
+# an ellipse. A nine-sliced 200x20 sprite keeps 10px rounded ends at any width.
+def button_png(path, fill, edge, highlight=False, disabled=False):
+    w,h=200,20
+    px=[]
+    for y in range(h):
+        row=[]
+        for x in range(w):
+            # Rounded capsule mask: radius 10 at both ends.
+            if x < 10:
+                inside=(x-10)**2+(y-10)**2 <= 100
+            elif x >= w-10:
+                inside=(x-(w-11))**2+(y-10)**2 <= 100
+            else:
+                inside=True
+            if not inside:
+                row.append((0,0,0,0)); continue
+            d=min(y, h-1-y)
+            if disabled:
+                col=(48,51,58) if d < 3 else (38,41,47)
+            elif highlight:
+                col=(72,224,214) if d < 3 else (34,112,120)
+            else:
+                col=(62,70,82) if d < 3 else fill
+            if edge and d in (0,1): col=edge
+            row.append((*col,255))
+        px.append(row)
+    raw=b"".join(b"\\0"+bytes(sum((list(v) for v in row),[])) for row in px)
+    def ch(t,d): return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
+    data=b"\\x89PNG\\r\\n\\x1a\\n"+ch(b"IHDR",struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+ch(b"IDAT",zlib.compress(raw,9))+ch(b"IEND",b"")
+    path.write_bytes(data)
+
+button_png(WIDGET/"button.png",(38,44,54),(90,255,240))
+button_png(WIDGET/"button_highlighted.png",(34,112,120),(130,255,248),highlight=True)
+button_png(WIDGET/"button_disabled.png",(38,41,47),(70,74,82),disabled=True)
+
+for name in ("button","button_highlighted","button_disabled"):
+    (WIDGET/f"{name}.png.mcmeta").write_text(json.dumps({
+        "gui":{"scaling":{"type":"nine_slice","width":200,"height":20,"border":10}}
+    },indent=2))
+
 # UI texture family: dark obsidian panels, cyan accents, subtle pixel borders.
 for i,name in enumerate(["widgets","inventory","container","recipe_book","crafting_table","furnace","smithing","creative_inventory_tab","slot","background"]):
     base=PAL["dark"]; acc=PAL["diamond"] if i%2==0 else PAL["amethyst"]
     png(GUI/f"{name}.png",32,32,base,acc,5000+i)
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.5 — Items + GUI","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.7 — Circular UI Buttons","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(ITEMS)} item textures and GUI textures.")
