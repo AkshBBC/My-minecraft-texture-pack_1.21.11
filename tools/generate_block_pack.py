@@ -177,6 +177,21 @@ def png(path, base, accent=None, mode="noise", seed=0):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
             if y%4==0 and x+1<16: px[y][x+1]=(*hi,255)
+    if mode == "soft_realistic":
+        # General material pass: brighter center, soft edge depth, small pixel details.
+        hi=tuple(min(255,int(v*1.18+6)) for v in base)
+        lo=tuple(max(0,int(v*0.72)) for v in base)
+        for y in range(16):
+            for x in range(16):
+                q=r.randint(-4,4)
+                px[y][x]=tuple(max(0,min(255,v+q)) for v in base)+(255,)
+        for x in range(16):
+            px[0][x]=(*hi,255); px[15][x]=(*lo,255)
+        for y in range(1,15):
+            px[y][0]=(*hi,255); px[y][15]=(*lo,255)
+        for _ in range(8):
+            x,y=r.randrange(1,15),r.randrange(1,15)
+            px[y][x]=(*hi,255)
     if mode == "door_realistic":
         # 16x door sprite: strong frame, long panels, hardware and species-specific
         # window/details. Cherry gets a deliberately cute floral heart motif.
