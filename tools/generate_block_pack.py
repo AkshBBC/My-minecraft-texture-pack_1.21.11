@@ -84,6 +84,25 @@ STONE_PALETTES = {
 
 STONE_KEYS = set(STONE_PALETTES)
 
+# Wood/log family: realistic material colours for bark and stripped wood.
+# Planks are intentionally excluded from this family and will be redesigned separately.
+WOOD_PALETTES = {
+    "oak": (151, 101, 57),
+    "spruce": (92, 67, 47),
+    "birch": (196, 175, 125),
+    "jungle": (139, 91, 52),
+    "acacia": (166, 73, 45),
+    "dark_oak": (69, 48, 35),
+    "mangrove": (118, 54, 49),
+    "cherry": (191, 105, 121),
+    "bamboo": (139, 158, 62),
+    "pale_oak": (177, 163, 135),
+    "crimson": (119, 38, 52),
+    "warped": (43, 118, 113),
+}
+
+WOOD_KEYS = set(WOOD_PALETTES)
+
 # Decorative light blocks: sakura/mushroom-inspired pink luminous pixel art.
 # These textures look emissive, while vanilla block-light mechanics remain unchanged.
 PINK_LIGHT_PALETTES = {
@@ -130,6 +149,127 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
+    if mode == "wood_realistic":
+        # Rich, natural 16x bark/stripped-wood rendering. Keep pixel edges crisp
+        # and use layered grain rather than the old flat noise treatment.
+        stripped = "stripped_" in path.stem
+        family = next((k for k in WOOD_PALETTES if k in path.stem), "oak")
+        bark = base
+        if stripped:
+            # Stripped wood is warmer/lighter while preserving each species' hue.
+            base2 = tuple(min(255, int(v * 1.18 + 8)) for v in base)
+        else:
+            base2 = base
+
+        dark = tuple(max(0, int(v * 0.62)) for v in base2)
+        mid = tuple(max(0, int(v * 0.86)) for v in base2)
+        light = tuple(min(255, int(v * 1.16 + 5)) for v in base2)
+        pale = tuple(min(255, int(v * 1.30 + 8)) for v in base2)
+
+        # Start with fine, organic grain.
+        for y in range(16):
+            for x in range(16):
+                wave = int(math.sin((x * 0.95) + (y * 0.23) + seed * 0.013) * 8)
+                grain = r.randint(-5, 5)
+                if stripped:
+                    v = tuple(max(0, min(255, q + wave + grain)) for q in base2)
+                else:
+                    v = tuple(max(0, min(255, q + wave + grain)) for q in base2)
+                px[y][x] = (*v, 255)
+
+        def put(x, y, color):
+            if 0 <= x < 16 and 0 <= y < 16:
+                px[y][x] = (*color, 255)
+
+        # Top face = unmistakable annual rings / growth-ring pattern.
+        if path.stem.endswith("_top") or path.stem.endswith("_log") or path.stem.endswith("_wood") or path.stem.endswith("_stem") or path.stem.endswith("_hyphae") or path.stem.endswith("_block"):
+            # Only make ring geometry when this texture is a top texture or a
+            # dedicated cube face likely to be used as a top. Side textures below
+            # are overwritten with bark/grain patterns.
+            top_like = path.stem.endswith("_top") or path.stem in (
+                "oak_log","spruce_log","birch_log","jungle_log","acacia_log","dark_oak_log",
+                "mangrove_log","cherry_log","pale_oak_log","stripped_oak_log","stripped_spruce_log",
+                "stripped_birch_log","stripped_jungle_log","stripped_acacia_log","stripped_dark_oak_log",
+                "stripped_mangrove_log","stripped_cherry_log","stripped_pale_oak_log",
+                "crimson_stem","warped_stem","stripped_crimson_stem","stripped_warped_stem",
+                "bamboo_block","stripped_bamboo_block"
+            )
+            if top_like:
+                cx, cy = 7.5, 7.5
+                for y in range(16):
+                    for x in range(16):
+                        d = math.hypot(x-cx, y-cy)
+                        ring = int(d * 1.25) % 3
+                        col = light if ring == 0 else (pale if ring == 1 else mid)
+                        # preserve a little species-specific variation
+                        jitter = r.randint(-3, 3)
+                        put(x, y, tuple(max(0,min(255,q+jitter)) for q in col))
+                # Offset heart and a few imperfect growth marks.
+                for x,y in ((7,7),(8,7),(7,8),(8,8),(5,5),(10,10)):
+                    put(x,y,dark if (x+y)%2 else light)
+
+        if not stripped:
+            # Bark: vertical dark fissures + lighter ridges. Special species
+            # details keep the woods visually distinct.
+            for x in range(1,16):
+                if (x + seed) % 4 == 0:
+                    for y in range(r.randint(3,5),16):
+                        if r.random() < 0.78:
+                            put(x,y,dark)
+                elif (x + seed) % 5 == 0:
+                    for y in range(16):
+                        if r.random() < 0.55:
+                            put(x,y,light)
+            if family == "birch":
+                # Birch's iconic pale bark with dark horizontal marks.
+                for y in (2,6,10,14):
+                    start = r.randrange(0,4)
+                    for x in range(start, min(16,start+r.randrange(3,7))):
+                        put(x,y,dark)
+                        if x+1 < 16: put(x+1,y,mid)
+            elif family == "jungle":
+                for x,y in ((3,3),(11,5),(6,10),(13,13),(1,12)):
+                    put(x,y,light)
+                    if y+1<16: put(x,y+1,dark)
+            elif family == "acacia":
+                for y in (3,8,13):
+                    for x in range(16):
+                        if (x+y)%3==0: put(x,y,dark)
+            elif family == "mangrove":
+                for x,y in ((2,4),(5,12),(10,3),(13,9)):
+                    put(x,y,pale); put(x,y+1,dark) if y<15 else None
+            elif family == "cherry":
+                for x,y in ((2,2),(5,7),(11,4),(13,11),(7,13)):
+                    put(x,y,light); put(x+1,y,pale) if x<15 else None
+            elif family == "bamboo":
+                # Bamboo block: segmented natural stalk structure.
+                for y in (3,8,13):
+                    for x in range(16):
+                        if x % 3:
+                            put(x,y,dark)
+                for x in (1,7,13):
+                    put(x,0,light)
+                    put(x,15,dark)
+            elif family == "crimson":
+                for x,y in ((2,3),(5,11),(9,5),(13,9)):
+                    put(x,y,(180,55,70)); put(x+1,y,(82,22,39)) if x<15 else None
+            elif family == "warped":
+                for x,y in ((2,4),(6,12),(10,3),(13,9)):
+                    put(x,y,(76,174,164)); put(x+1,y,(24,78,78)) if x<15 else None
+        else:
+            # Stripped faces: smooth vertical grain, brighter center bands and
+            # a few subtle knots instead of bark fissures.
+            for x in range(16):
+                if x % 4 == (seed % 4):
+                    for y in range(16):
+                        put(x,y,light)
+                elif x % 5 == ((seed+2) % 5):
+                    for y in range(16):
+                        if (x+y)%3:
+                            put(x,y,mid)
+            for x,y in ((4,5),(11,10)):
+                put(x,y,dark); put(x+1,y,mid); put(x,y+1,mid)
+
     if mode == "pink_light":
         # Dark magenta foundation + bright hand-placed motifs creates a strong
         # pink-glow impression at 16x without smooth gradients or shaders.
@@ -218,6 +358,11 @@ def base_for(name):
     # This intentionally runs before the generic material matching below.
     if n in PINK_LIGHT_PALETTES:
         return PINK_LIGHT_PALETTES[n]
+    for wood_name, wood_color in WOOD_PALETTES.items():
+        if n == wood_name + "_log" or n == wood_name + "_wood" or n == "stripped_" + wood_name + "_log" or n == "stripped_" + wood_name + "_wood":
+            return wood_color
+    if n == "bamboo_block" or n == "stripped_bamboo_block":
+        return WOOD_PALETTES["bamboo"]
     if n in STONE_PALETTES:
         return STONE_PALETTES[n]
     if any(k in n for k in ("diamond","lapis","blue_ice")): return PALETTE["diamond"]
@@ -257,6 +402,8 @@ def accent_for(name):
 def style_for(name):
     if name in PINK_LIGHT_KEYS:
         return "pink_light"
+    if any(name == k + "_log" or name == k + "_wood" or name == "stripped_" + k + "_log" or name == "stripped_" + k + "_wood" for k in WOOD_KEYS) or name in ("bamboo_block","stripped_bamboo_block","crimson_stem","warped_stem","stripped_crimson_stem","stripped_warped_stem","crimson_hyphae","warped_hyphae","stripped_crimson_hyphae","stripped_warped_hyphae"):
+        return "wood_realistic"
     if name in STONE_KEYS:
         return "stone_glow"
     if any(k in name for k in ("ore","debris")): return "ore"
@@ -294,6 +441,6 @@ for ore, ac in {
             png(BLOCK/f"{host}_{ore}_ore.png", hb, ac, "ore", 9000+len(ore)+(1 if host=="deepslate" else 0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Pink Sakura Lights","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Realistic Wood Family","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(list(BLOCK.glob('*.png')))} block textures.")
