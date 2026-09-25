@@ -152,12 +152,15 @@ def png(path, base, accent=None, mode="noise", seed=0):
             x,y=r.randrange(1,15),r.randrange(1,15)
             px[y][x]=(*ac,255)
     if mode == "glass":
+        ac=accent or base
+        hi=tuple(min(255,c+35) for c in ac)
         for y in range(16):
             for x in range(16):
-                px[y][x]=(*base,90 if (x+y)%3 else 135)
-        ac=accent or base
+                alpha=88 if (x+y)%3 else 128
+                px[y][x]=(*base,alpha)
         for i in range(16):
-            px[i][i]=(*ac,205)
+            px[i][i]=(*hi,205)
+            if i+1<16: px[i][i+1]=(*ac,150)
     if mode == "leaf":
         # Softer layered foliage: preserve cutout silhouette, add leaf clusters.
         for y in range(16):
