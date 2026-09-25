@@ -45,6 +45,45 @@ COLORS = {
     "brown": (120,75,48)
 }
 
+
+
+# Stone family: brighter OBSIDIAN treatment with subtle luminous highlights.
+# This is a visual brightness treatment only; it does not make blocks emit light.
+STONE_PALETTES = {
+    "stone": (112, 118, 126),
+    "cobblestone": (101, 108, 116),
+    "smooth_stone": (145, 151, 158),
+    "granite": (177, 108, 88),
+    "polished_granite": (194, 116, 92),
+    "diorite": (190, 193, 192),
+    "polished_diorite": (211, 213, 210),
+    "andesite": (126, 131, 136),
+    "polished_andesite": (149, 154, 159),
+    "deepslate": (59, 67, 78),
+    "cobbled_deepslate": (53, 61, 71),
+    "polished_deepslate": (75, 84, 96),
+    "tuff": (135, 130, 118),
+    "calcite": (216, 213, 203),
+    "basalt": (76, 83, 92),
+    "smooth_basalt": (91, 98, 107),
+    "blackstone": (62, 54, 66),
+    "polished_blackstone": (76, 66, 82),
+    "stone_bricks": (104, 110, 116),
+    "deepslate_bricks": (67, 75, 86),
+    "deepslate_tiles": (60, 68, 80),
+    "tuff_bricks": (126, 122, 112),
+    "polished_tuff": (151, 147, 137),
+    "end_stone": (202, 198, 151),
+    "end_stone_bricks": (183, 180, 139),
+    "prismarine": (86, 155, 145),
+    "prismarine_bricks": (78, 145, 137),
+    "dark_prismarine": (61, 105, 101),
+    "mossy_cobblestone": (89, 112, 91),
+    "mossy_stone_bricks": (96, 119, 98),
+}
+
+STONE_KEYS = set(STONE_PALETTES)
+
 def png(path, base, accent=None, mode="noise", seed=0):
     r = random.Random(seed)
     px = [[(*base,255) for _ in range(16)] for _ in range(16)]
@@ -82,7 +121,32 @@ def png(path, base, accent=None, mode="noise", seed=0):
         for y in range(4,15):
             x=7+(y%3-1)
             px[y][x]=(*ac,255)
-    if accent and mode not in ("ore","glass","plant"):
+    if mode == "stone_glow":
+        # Keep the recognizable Minecraft-like pixel texture, but brighten the
+        # material and add restrained luminous flecks/edges instead of a flat wash.
+        for y in range(16):
+            for x in range(16):
+                rr,gg,bb,_ = px[y][x]
+                lift = 8 + ((x * 7 + y * 11 + seed) % 7)
+                px[y][x] = (
+                    min(255, rr + lift),
+                    min(255, gg + lift),
+                    min(255, bb + lift),
+                    255
+                )
+        ac = accent or tuple(min(255, v + 42) for v in base)
+        for _ in range(10):
+            x,y = r.randrange(1,15),r.randrange(1,15)
+            px[y][x] = (*ac,255)
+            if r.random() < 0.45 and x < 15:
+                px[y][x+1] = (*ac,255)
+        # A few restrained highlights give the stone a soft "glow" impression
+        # without requiring emissive shaders.
+        for x,y in ((2,3),(8,2),(13,6),(5,11),(11,13)):
+            if (x + y + seed) % 3:
+                rr,gg,bb,_ = px[y][x]
+                px[y][x] = (min(255,rr+18),min(255,gg+18),min(255,bb+18),255)
+    if accent and mode not in ("ore","glass","plant","stone_glow"):
         for i in range(3):
             x=r.randrange(16); y=r.randrange(16)
             px[y][x]=(*accent,255)
@@ -93,6 +157,10 @@ def png(path, base, accent=None, mode="noise", seed=0):
 
 def base_for(name):
     n=name
+    # Stone-family textures get their own brighter, material-specific palette.
+    # This intentionally runs before the generic material matching below.
+    if n in STONE_PALETTES:
+        return STONE_PALETTES[n]
     if any(k in n for k in ("diamond","lapis","blue_ice")): return PALETTE["diamond"]
     if "emerald" in n: return PALETTE["emerald"]
     if "redstone" in n: return PALETTE["redstone"]
@@ -128,6 +196,8 @@ def accent_for(name):
     return None
 
 def style_for(name):
+    if name in STONE_KEYS:
+        return "stone_glow"
     if any(k in name for k in ("ore","debris")): return "ore"
     if "glass" in name: return "glass"
     if any(k in name for k in ("leaves",)): return "leaf"
@@ -163,6 +233,6 @@ for ore, ac in {
             png(BLOCK/f"{host}_{ore}_ore.png", hb, ac, "ore", 9000+len(ore)+(1 if host=="deepslate" else 0))
 
 meta={"min_format":[75,0],"max_format":[75,0],
-      "description":{"text":"OBSIDIAN // Performance 16x v0.4 — Complete Block Overhaul","color":"a8fff5"}}
+      "description":{"text":"OBSIDIAN // Performance 16x v0.6 — Brighter Stone Family","color":"a8fff5"}}
 (OUT/"pack.mcmeta").write_text(json.dumps(meta,indent=2))
 print(f"Generated {len(list(BLOCK.glob('*.png')))} block textures.")
